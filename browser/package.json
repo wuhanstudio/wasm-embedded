@@ -1,0 +1,13 @@
+{
+  "name": "getting-started-with-wasm",
+  "version": "1.0.0",
+  "description": "WASM",
+  "main": "server.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
