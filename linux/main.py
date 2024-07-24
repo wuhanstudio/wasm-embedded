@@ -8,7 +8,7 @@ print("WebAssembly demo file provided by Ben Smith (binji)")
 print("Sources: https://github.com/binji/raw-wasm")
 
 scriptpath = os.path.dirname(os.path.realpath(__file__))
-wasm_fn = os.path.join(scriptpath, "./wasm/fire.wasm")
+wasm_fn = os.path.join(scriptpath, "fire.wasm")
 
 # Prepare Wasm3 engine
 
