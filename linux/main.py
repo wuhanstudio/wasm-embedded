@@ -1,37 +1,61 @@
+#!/usr/bin/env python3
+
 import wasm3
-import ctypes
-import numpy as np
+import os, time, random, math
+import pygame
 
-def render(dataLength, circleStructSize):
-    # mem = rt.get_memory(result)
-    print(dataLength, circleStructSize)
-    # array = np.ndarray([20, 8], dtype = int, buffer = ctypes.c_void_p.from_address(result))
-    # wasm_circles = rt.find_function("getCircles")
-    # circles = wasm_circles(800, 600)
+print("WebAssembly demo file provided by Ben Smith (binji)")
+print("Sources: https://github.com/binji/raw-wasm")
 
-# Initialize the environment
+scriptpath = os.path.dirname(os.path.realpath(__file__))
+wasm_fn = os.path.join(scriptpath, "./wasm/fire.wasm")
+
+# Prepare Wasm3 engine
+
 env = wasm3.Environment()
-rt  = env.new_runtime(64*1024)
-
-# Load the wasm module
-with open("canvas.wasm", "rb") as f:
-    mod = env.parse_module((f.read()))
-    img_ptr = mod.get_global("circles")
+rt = env.new_runtime(1024)
+with open(wasm_fn, "rb") as f:
+    mod = env.parse_module(f.read())
     rt.load(mod)
+    mod.link_function("", "rand", random.random)
 
-    mem = rt.get_memory(0)
-    # (img_base,) = struct.unpack("<I", mem[img_ptr : img_ptr+4])
-    # region = mem[img_base : img_base + (img_w * img_h * 4)]
-    # img = pygame.image.frombuffer(region, img_size, "RGBA")
+wasm_run = rt.find_function("run")
+mem = rt.get_memory(0)
 
-    # mod.link_function("env", "render", "(ii)", render)
+# Map memory region to an RGBA image
 
-# Run the module
-wasm_main = rt.find_function("_main")
-# wasm_main = rt.find_function("get_circles")
+img_base = 53760
+img_size = (320, 168)
+(img_w, img_h) = img_size
+region = mem[img_base : img_base + (img_w * img_h * 4)]
+img = pygame.image.frombuffer(region, img_size, "RGBA")
 
-try:
-    result = wasm_main()
-    print(result)
-except Exception as e:
-    print(e)
+# Prepare PyGame
+
+scr_size = (img_w*2, img_h*2)
+pygame.init()
+surface = pygame.display.set_mode(scr_size)
+pygame.display.set_caption("Wasm3 Doomfire")
+background = (255, 255, 255)
+
+clock = pygame.time.Clock()
+
+while True:
+    # Process input
+    for event in pygame.event.get():
+        if (event.type == pygame.QUIT or
+            (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE)):
+            pygame.quit()
+            quit()
+
+    # Render next frame
+    wasm_run()
+
+    # Image output
+    img_scaled = pygame.transform.scale(img, scr_size)
+    surface.fill(background)
+    surface.blit(img_scaled, (0, 0))
+    pygame.display.flip()
+
+    # Stabilize FPS
+    clock.tick(60)
