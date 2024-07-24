@@ -47,7 +47,7 @@ int main() {
         circles[i].vy = getRand(10);
     }
     
-    EM_ASM({ render($0, $1); }, NUM_CIRCLES*6, 8);
+    // EM_ASM({ render($0, $1); }, NUM_CIRCLES*8, 8);
 
     // emscripten_run_script("render()");
 }
