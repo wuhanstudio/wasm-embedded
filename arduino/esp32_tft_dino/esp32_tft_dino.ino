@@ -4,7 +4,6 @@
    All rights reserved.
 */
 
-
 #include <Adafruit_GFX.h>    // Core graphics library
 #include <Adafruit_ST7735.h> // Hardware-specific library for ST7735
 #include <SPI.h>
@@ -67,9 +66,7 @@ Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 m3ApiRawFunction(Math_random)
 {
   m3ApiReturnType (float)
-
   float r = (float)random(INT_MAX) / INT_MAX;
-  //Serial.print("Random: "); Serial.println(r);
 
   m3ApiReturn(r);
 }
@@ -187,7 +184,7 @@ void wasm_task(void*)
     if (result) break;
 
     // Output to display
-    tft.drawRGBBitmap(0, 135 - 10 - 75, (uint16_t*)(mem + 0x5000), 240, 75);
+    tft.drawRGBBitmap(0, 127 - 75, (uint16_t*)(mem + 0x5000), 128, 75);
 
     const uint64_t frametime = micros() - framestart;
     const uint32_t target_frametime = 1000000 / 50;

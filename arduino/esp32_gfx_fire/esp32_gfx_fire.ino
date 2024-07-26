@@ -1,3 +1,9 @@
+/*
+   Wasm3 - high performance WebAssembly interpreter written in C.
+   Copyright © 2021 Volodymyr Shymanskyy, Steven Massey.
+   All rights reserved.
+*/
+
 #include <Arduino_GFX_Library.h>
 
 #define GFX_BL 13 // default backlight pin, you may replace DF_GFX_BL to actual backlight pin
@@ -34,20 +40,6 @@ m3ApiRawFunction(Math_random)
   m3ApiReturn(r);
 }
 
-// Memcpy is generic, and much faster in native code
-m3ApiRawFunction(Fire_memcpy)
-{
-  m3ApiGetArgMem  (uint8_t *, dst)
-  m3ApiGetArgMem  (uint8_t *, src)
-  m3ApiGetArgMem  (uint8_t *, dstend)
-
-  do {
-    *dst++ = *src++;
-  } while (dst < dstend);
-
-  m3ApiSuccess();
-}
-
 IM3Environment  env;
 IM3Runtime      runtime;
 IM3Module       module;
@@ -75,7 +67,6 @@ void load_wasm()
   if (result) FATAL("LoadModule", result);
 
   m3_LinkRawFunction (module, "Math",   "random",     "f()",      &Math_random);
-  m3_LinkRawFunction (module, "Fire",   "memcpy",     "v(iii)",   &Fire_memcpy);
 
   mem = m3_GetMemory (runtime, NULL, 0);
   if (!mem) FATAL("GetMemory", "failed");
@@ -104,6 +95,12 @@ void setup()
   digitalWrite(GFX_BL, HIGH);
 #endif
 
+  Serial.println("\nWasm3 v" M3_VERSION " (" M3_ARCH "), build " __DATE__ " " __TIME__);
+
+  // Try to randomize seed
+  randomSeed((analogRead(A5) << 16) + analogRead(A4));
+  Serial.print("Random: 0x"); Serial.println(random(INT_MAX), HEX);
+
   uint32_t tend, tstart;
 
   TSTART();
@@ -128,13 +125,7 @@ void wasm_task(void*)
     if (result) break;
 
     // Output to display (Big Endian)
-    //    tft.startWrite();
-    //    tft.writePixels((uint16_t*)(mem + 0x4000), 128 * 128, true, true);
-    //    tft.endWrite();
-
     gfx->draw16bitBeRGBBitmap(0, 0, (uint16_t*)(mem + 0x4000), 128, 128);
-
-    // gfx->draw16bitRGBBitmap(0, 0, (uint16_t*)(mem + 0x4000), 128, 128);
 
     const uint64_t frametime = micros() - framestart;
     const uint32_t target_frametime = 1000000 / 50;

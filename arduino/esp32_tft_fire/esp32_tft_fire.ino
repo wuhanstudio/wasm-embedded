@@ -48,20 +48,6 @@ m3ApiRawFunction(Math_random)
   m3ApiReturn(r);
 }
 
-// Memcpy is generic, and much faster in native code
-m3ApiRawFunction(Fire_memcpy)
-{
-  m3ApiGetArgMem  (uint8_t *, dst)
-  m3ApiGetArgMem  (uint8_t *, src)
-  m3ApiGetArgMem  (uint8_t *, dstend)
-
-  do {
-    *dst++ = *src++;
-  } while (dst < dstend);
-
-  m3ApiSuccess();
-}
-
 IM3Environment  env;
 IM3Runtime      runtime;
 IM3Module       module;
@@ -89,8 +75,7 @@ void load_wasm()
   if (result) FATAL("LoadModule", result);
 
   m3_LinkRawFunction (module, "Math",   "random",     "f()",      &Math_random);
-  m3_LinkRawFunction (module, "Fire",   "memcpy",     "v(iii)",   &Fire_memcpy);
-
+ 
   mem = m3_GetMemory (runtime, NULL, 0);
   if (!mem) FATAL("GetMemory", "failed");
 
@@ -112,7 +97,6 @@ void init_device()
 
   tft.initR(INITR_144GREENTAB); // Init ST7735R chip, green tab
   tft.setRotation(1);
-  // tft.setSwapBytes(true);
 }
 
 
@@ -164,9 +148,6 @@ void wasm_task(void*)
     tft.startWrite();
     tft.writePixels((uint16_t*)(mem + 0x4000), 128 * 128, true, true);
     tft.endWrite();
-
-    // Output to display (Little Endian)
-    // tft.drawRGBBitmap(0, 0, (uint16_t*)(mem + 0x4000), 128, 128);
 
     const uint64_t frametime = micros() - framestart;
     const uint32_t target_frametime = 1000000 / 50;

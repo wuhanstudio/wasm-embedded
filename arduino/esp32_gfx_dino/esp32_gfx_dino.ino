@@ -4,43 +4,25 @@
    All rights reserved.
 */
 
+#include <Arduino_GFX_Library.h>
 
-#include <Adafruit_GFX.h>    // Core graphics library
-#include <Adafruit_ST7735.h> // Hardware-specific library for ST7735
-#include <SPI.h>
+#define GFX_BL 13 // default backlight pin, you may replace DF_GFX_BL to actual backlight pin
+
+/* More data bus class: https://github.com/moononournation/Arduino_GFX/wiki/Data-Bus-Class */
+Arduino_DataBus *bus = new Arduino_ESP32SPI(17 /* DC */, 26 /* CS */, 18 /* SCK */, 23 /* MOSI */, GFX_NOT_DEFINED /* MISO */, VSPI /* spi_num */);
+
+/* More display class: https://github.com/moononournation/Arduino_GFX/wiki/Display-Class */
+Arduino_GFX *gfx = new Arduino_ST7735(
+  bus, 16 /* RST */, 1 /* rotation */, false /* IPS */,
+  128 /* width */, 128 /* height */,
+  2 /* col offset 1 */, 3 /* row offset 1 */,
+  2 /* col offset 2 */, 1 /* row offset 2 */);
 
 #include <wasm3.h>
-
 #define NATIVE_STACK_SIZE   (32*1024)
 
 #define BUTTON_UP           35
 #define BUTTON_DOWN         0
-
-#define DISPLAY_BRIGHTESS   128    // 0..255
-
-
-#if defined(ARDUINO_FEATHER_ESP32) // Feather Huzzah32
-#define TFT_CS         14
-#define TFT_RST        15
-#define TFT_DC         32
-
-#elif defined(ESP8266)
-#define TFT_CS         4
-#define TFT_RST        16
-#define TFT_DC         5
-
-#else
-// For the breakout board, you can use any 2 or 3 pins.
-// These pins will also work for the 1.8" TFT shield.
-#define TFT_CS         26
-#define TFT_RST        16 // Or set to -1 and connect to Arduino RESET pin
-#define TFT_DC         17
-#endif
-
-#define TFT_LED  13
-
-// For 1.44" and 1.8" TFT with ST7735 use:
-Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 
 /*
    Dino game by by Ben Smith (binji)
@@ -67,9 +49,7 @@ Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 m3ApiRawFunction(Math_random)
 {
   m3ApiReturnType (float)
-
   float r = (float)random(INT_MAX) / INT_MAX;
-  //Serial.print("Random: "); Serial.println(r);
 
   m3ApiReturn(r);
 }
@@ -132,18 +112,27 @@ void init_device()
   // Try to randomize seed
   randomSeed((analogRead(A5) << 16) + analogRead(A4));
   Serial.print("Random: 0x"); Serial.println(random(INT_MAX), HEX);
-
-
-  pinMode(TFT_LED, OUTPUT);
-  digitalWrite(TFT_LED, HIGH);
-
-  tft.initR(INITR_144GREENTAB); // Init ST7735R chip, green tab
-  tft.setRotation(1);
 }
 
 void setup()
 {
   Serial.begin(115200);
+
+#ifdef GFX_EXTRA_PRE_INIT
+  GFX_EXTRA_PRE_INIT();
+#endif
+
+  // Init Display
+  if (!gfx->begin())
+  {
+    Serial.println("gfx->begin() failed!");
+  }
+  gfx->fillScreen(WHITE);
+
+#ifdef GFX_BL
+  pinMode(GFX_BL, OUTPUT);
+  digitalWrite(GFX_BL, HIGH);
+#endif
 
   Serial.println("\nWasm3 v" M3_VERSION " (" M3_ARCH "), build " __DATE__ " " __TIME__);
 
@@ -151,9 +140,6 @@ void setup()
   TSTART();
   init_device();
   TFINISH("Device init");
-
-  tft.fillScreen(ST77XX_WHITE);
-  tft.setTextColor(ST77XX_BLACK, ST77XX_WHITE);
 
   TSTART();
   load_wasm();
@@ -186,8 +172,8 @@ void wasm_task(void*)
     result = m3_CallV (func_run);
     if (result) break;
 
-    // Output to display
-    tft.drawRGBBitmap(0, 135 - 10 - 75, (uint16_t*)(mem + 0x5000), 240, 75);
+    // Output to display (Big Endian)
+    gfx->draw16bitRGBBitmap(0, 127 - 75, (uint16_t*)(mem + 0x5000), 128, 75);
 
     const uint64_t frametime = micros() - framestart;
     const uint32_t target_frametime = 1000000 / 50;

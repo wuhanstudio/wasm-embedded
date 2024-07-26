@@ -1,11 +1,12 @@
 ;; Import Math.random from JavaScript.
 (import "Math" "random" (func $random (result f32)))
+(import "Dino" "memcpy" (func $memcpy (param $dst i32) (param $src i32) (param $dstend i32)))
 
 ;; *** Memory map ***
 ;; 0x0                Input: 1=up, 2=down, 3=up+down
 ;; [0x4, 0x5000)      See below
-;; [0x5000, 0x1c000)  Color[300*75]  canvas
-(memory (export "mem") 2)
+;; [0x5000, 0x9B00)   16-bit canvas [128*75] (19200 bytes)
+(memory (export "mem") 1)
 
 ;; Some float constants to reduce size.
 (global $f0 f32 (f32.const 0))
@@ -181,15 +182,15 @@
   ;;  }
   ;;
   ;;   w  h col
-  (i8 20 22 171)  ;;  0 dead,stand,run1,run2
-  (i8 28 13 171)  ;;  3 duck1,duck2
+  (i8 20 22 170)  ;;  0 dead,stand,run1,run2
+  (i8 28 13 170)  ;;  3 duck1,duck2
   (i8 13 26 172)  ;;  6 cactus1
   (i8 19 18 172)  ;;  9 cactus2
   (i8 28 18 172)  ;; 12 cactus3
   (i8  9 18 172)  ;; 15 cactus4
   (i8 40 26 172)  ;; 18 cactus5
   (i8 26  8  37)  ;; 21 cloud
-  (i8 64  5 171)  ;; 24 ground
+  (i8 64  5 170)  ;; 24 ground
   (i8 23 14 172)  ;; 27 bird1
   (i8 23 16 172)  ;; 30 bird2
   (i8  3  5 172)  ;; 33 digits
@@ -293,15 +294,15 @@
 
 ;; Copy len bytes from $src to $dst. We can emulate a fill if the regions
 ;; overlap. Always copies at least one byte!
-(func $memcpy (param $dst i32) (param $src i32) (param $dstend i32)
-  (loop $copy
-    (i32.store8 (local.get $dst) (i32.load8_u (local.get $src)))
-    (local.set $src (i32.add (local.get $src) (i32.const 1)))
-    (br_if $copy
-      (i32.lt_u
-        (local.tee $dst (i32.add (local.get $dst) (i32.const 1)))
-        (local.get $dstend))))
-)
+;;(func $memcpy (param $dst i32) (param $src i32) (param $dstend i32)
+;;  (loop $copy
+;;    (i32.store8 (local.get $dst) (i32.load8_u (local.get $src)))
+;;    (local.set $src (i32.add (local.get $src) (i32.const 1)))
+;;    (br_if $copy
+;;      (i32.lt_u
+;;        (local.tee $dst (i32.add (local.get $dst) (i32.const 1)))
+;;        (local.get $dstend))))
+;;)
 
 ;; The main decompression routine, which runs when the module is loaded (in the
 ;; start function).
@@ -440,6 +441,22 @@
         (i32.const 1984))))
 )
 
+;; Convert Grayscale color to 16-bit RGB (565)
+(func $color565 (export "color565") (param $gray i32) (result i32)
+  (local.set $gray (i32.sub (i32.const 0xFF) (local.get $gray)))
+  (i32.or
+    (i32.div_u (i32.mul (local.get $gray) (i32.const 0x1F)) (i32.const 0xFF))
+    (i32.or
+      (i32.shl
+        (i32.div_u (i32.mul (local.get $gray) (i32.const 0x3F)) (i32.const 0xFF))
+        (i32.const 5))
+      (i32.shl
+        (i32.div_u (i32.mul (local.get $gray) (i32.const 0x1F)) (i32.const 0xFF))
+        (i32.const 11))
+    )
+  )
+)
+
 ;; Blit an 8bpp image to the screen at ($x, $y). The $whcol_offset and
 ;; $src_offset values are the same ones as are stored in the Image Table above.
 ;; They're supplied as parameters here so the Digits and GameOver images can
@@ -451,7 +468,7 @@
       (param $src_offset i32) (result i32)
   (local $w i32)             ;; destination width of the sprite (maybe clipped)
   (local $h i32)             ;; height of the sprite (never clipped)
-  (local $color i32)         ;; full 32-bit ARGB color
+  (local $color i32)         ;; 16-bit RGB(565) color
   (local $dst_offset i32)    ;; destination offset, updated per-row
   (local $dst_addr i32)      ;; destination address, calculated per-pixel
   (local $src_stride i32)    ;; the original width of the sprite
@@ -462,9 +479,8 @@
     (local.tee $w (i32.load8_u offset=297 (local.get $whcol_offset))))
   (local.set $h (i32.load8_u offset=298 (local.get $whcol_offset)))
   (local.set $color
-    (i32.shl
-      (i32.load8_u offset=299 (local.get $whcol_offset))
-      (i32.const 24)))
+    (call $color565
+      (i32.load8_u offset=299 (local.get $whcol_offset))))
 
   ;; if (x < 0)
   (if
@@ -481,17 +497,17 @@
     (else
       ;; if (x + w > SCREEN_WIDTH)
       (if
-        (i32.gt_s (i32.add (local.get $x) (local.get $w)) (i32.const 300))
+        (i32.gt_s (i32.add (local.get $x) (local.get $w)) (i32.const 128))
         (then
           ;; w = SCREEN_WIDTH - x
-          (local.set $w (i32.sub (i32.const 300) (local.get $x)))))))
+          (local.set $w (i32.sub (i32.const 128) (local.get $x)))))))
 
   ;; if (w <= 0) { return 0; }
   (if (i32.gt_s (local.get $w) (i32.const 0))
     (then
       ;; dst_addr = y * SCREEN_WIDTH + x
       (local.set $dst_offset
-        (i32.add (i32.mul (local.get $y) (i32.const 300)) (local.get $x)))
+        (i32.add (i32.mul (local.get $y) (i32.const 128)) (local.get $x)))
 
       (loop $yloop
         ;; ix = 0;
@@ -509,14 +525,14 @@
                 (i32.or
                   (local.get $hit)
                   (i32.eq
-                    (i32.load8_u offset=0x5003
+                    (i32.load16_u offset=0x5000
                       (local.tee $dst_addr
                         (i32.shl (i32.add (local.get $dst_offset)
                                           (local.get $ix))
-                                 (i32.const 2))))
-                    (i32.const 172))))
+                                 (i32.const 1))))
+                    (i32.const 0x528A)))) ;; $color565(172)
               ;; set new pixel
-              (i32.store offset=0x5000 (local.get $dst_addr) (local.get $color))))
+              (i32.store16 offset=0x5000 (local.get $dst_addr) (local.get $color))))
 
           ;; loop while (++ix < w)
           (br_if $xloop
@@ -525,7 +541,7 @@
               (local.get $w))))
 
         ;; dst_addr += SCREEN_WIDTH
-        (local.set $dst_offset (i32.add (local.get $dst_offset) (i32.const 300)))
+        (local.set $dst_offset (i32.add (local.get $dst_offset) (i32.const 128)))
         ;; src_addr += src_stride;
         (local.set $src_offset (i32.add (local.get $src_offset) (local.get $src_stride)))
 
@@ -554,7 +570,7 @@
   (local $dino_y f32)       ;; new dino y, updated each frame
 
   ;; Clear the screen (the byte at 0x4fff is initialized to 0xff)
-  (call $memcpy (i32.const 0x5000) (i32.const 0x4fff) (i32.const 0x1af90))
+  (call $memcpy (i32.const 0x5000) (i32.const 0x4fff) (i32.const 0x9B00)) ;; 24000+0x5000
 
   ;; Animation timer
   (global.set $timer (i32.add (global.get $timer) (i32.const 1)))
@@ -743,7 +759,7 @@
           (f32.add
             (f32.add
               (local.get $obj_x)
-              (f32.const 384))    ;; SCREEN_WIDTH + 64
+              (f32.const 192))    ;; SCREEN_WIDTH + 64
             (f32.convert_i32_u
               (i32.shl
                 (i32.load8_u offset=133
@@ -775,7 +791,7 @@
 
   ;; draw score
   (local.set $score (global.get $score))
-  (local.set $score_x (i32.const 300))
+  (local.set $score_x (i32.const 118))    ;; SCREEN_WIDTH - 10
   (loop $loop
     (drop
       (call $blit
@@ -801,7 +817,7 @@
       (drop
         (call $blit
           ;; x y
-          (i32.const 125) (i32.const 33)
+          (i32.const 48) (i32.const 33)
           ;; whcol_offset
           (i32.const 36)
           ;; src_offset
