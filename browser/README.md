@@ -2,4 +2,4 @@
 
 [Demo Link](https://wasm.wuhanstudio.uk/)
 
-![](browser.gif)
+[![](browser.gif)](https://wasm.wuhanstudio.uk/)

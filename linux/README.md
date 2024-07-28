@@ -1,9 +1,9 @@
 ## WASM (Linux x64)
 
-[Fire Demo](./fire)
+Fire Demo
 
-![](fire.gif)
+[![](fire.gif)](./fire)
 
-[Dino Demo](./dino)
+Dino Demo
 
-![](dino.gif)
+[![](dino.gif)](./dino)
