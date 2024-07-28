@@ -1,6 +1,6 @@
-## Linux (wasm3 + pygame)
+## WASM (Linux x64)
 
 ```
 pip install pywasm3 pygame
-python main.py
+python main_wasm3.py
 ```
