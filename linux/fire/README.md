@@ -4,3 +4,5 @@
 pip install pywasm3 pygame
 python main_wasm3.py
 ```
+
+![](fire.gif)
