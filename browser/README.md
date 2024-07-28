@@ -1,3 +1,5 @@
 ## WASM (Browser)
 
-![](browser.png)
+[Demo Link](https://wasm.wuhanstudio.uk/)
+
+![](browser.gif)
