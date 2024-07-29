@@ -24,15 +24,15 @@ mem = rt.get_memory(0)
 
 # Map memory region to an RGBA image
 
-img_base = 16384
-img_size = (128, 128)
+img_base = 53760
+img_size = (320, 168)
 (img_w, img_h) = img_size
 region = mem[img_base : img_base + (img_w * img_h * 4)]
 img = pygame.image.frombuffer(region, img_size, "RGBA")
 
 # Prepare PyGame
 
-scr_size = (img_w*4, img_h*4)
+scr_size = (img_w*2, img_h*2)
 pygame.init()
 surface = pygame.display.set_mode(scr_size)
 pygame.display.set_caption("Wasm3 Doomfire")
