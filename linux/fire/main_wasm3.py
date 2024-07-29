@@ -32,7 +32,7 @@ img = pygame.image.frombuffer(region, img_size, "RGBA")
 
 # Prepare PyGame
 
-scr_size = (img_w*2, img_h*2)
+scr_size = (img_w*4, img_h*4)
 pygame.init()
 surface = pygame.display.set_mode(scr_size)
 pygame.display.set_caption("Wasm3 Doomfire")
