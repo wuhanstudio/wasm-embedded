@@ -1,5 +1,7 @@
 ## WASM (Arm Linux)
 
+Please check the resolution of your screen first (/dev/fb0):
+
 ```
 # fbset 
 
@@ -11,3 +13,5 @@ mode "800x480-0"
 	rgba 8/16,8/8,8/0,0/0
 endmode
 ```
+
+![](arm-linux.gif)
