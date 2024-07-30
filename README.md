@@ -12,4 +12,8 @@ The same WASM code running on different platforms.
 
 
 
-![](demo.gif)
+![](dino.gif)
+
+
+
+![](fire.gif)

@@ -13,7 +13,7 @@ Arduino_DataBus *bus = new Arduino_ESP32SPI(17 /* DC */, 26 /* CS */, 18 /* SCK 
 
 /* More display class: https://github.com/moononournation/Arduino_GFX/wiki/Display-Class */
 Arduino_GFX *gfx = new Arduino_ST7735(
-  bus, 16 /* RST */, 1 /* rotation */, false /* IPS */,
+  bus, 16 /* RST */, 0 /* rotation */, false /* IPS */,
   128 /* width */, 128 /* height */,
   2 /* col offset 1 */, 3 /* row offset 1 */,
   2 /* col offset 2 */, 1 /* row offset 2 */);
