@@ -1,6 +1,6 @@
 ## WASM (RT-Thread RTOS)
 
-This demo uses the (RT-Thread RA6M3 HMI Board).
+This demo uses the [RT-Thread RA6M3 HMI Board](https://blog.lvgl.io/2023-06-14/ra6m3-hmi-board-review).
 
 ![](rt-thread.gif)
 
