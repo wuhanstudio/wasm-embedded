@@ -1,9 +1,3 @@
-
-/*
- * Copyright (C) 2019 Intel Corporation.  All rights reserved.
- * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
- */
-
 #include <rtthread.h>
 
 #include <wasm_export.h>
@@ -67,15 +61,6 @@ static float math_random(wasm_exec_env_t exec_env)
     return r;
 }
 
-//// Memcpy is generic, and much faster in native code
-//static void dino_memcpy(wasm_exec_env_t exec_env, uint8_t* dst, uint8_t* src, uint8_t* dstend)
-//{
-//  do {
-//    *dst++ = *src++;
-//  } while (dst < dstend);
-//  return;
-//}
-
 // Define an array of NativeSymbol for the APIs to be exported.
 // Note: the array must be static defined since runtime
 //            will keep it after registration
@@ -90,15 +75,6 @@ static NativeSymbol native_symbols_math[] = {
         NULL            // attachment is NULL
     },
 };
-
-//static NativeSymbol native_symbols_dino[] = {
-//    {
-//        "memcpy",       // the name of WASM function name
-//        dino_memcpy,    // the native function pointer
-//        "(iii)v",          // the function prototype signature, avoid to use i32
-//        NULL            // attachment is NULL
-//    },
-//};
 
 /*
  * WAMR API Example
@@ -150,15 +126,6 @@ static void dino_thread_entry(void *parameter)
         printf("> Error linking functions!\n");
         return;
     }
-
-    // natives registration must be done before loading WASM modules
-//    if (!wasm_runtime_register_natives("Dino",
-//                                     native_symbols_dino,
-//                                     sizeof(native_symbols_dino) / sizeof(NativeSymbol)))
-//    {
-//        printf("> Error linking functions!\n");
-//        return;
-//    }
 
     module = wasm_runtime_load((uint8 *)dino_wasm, dino_wasm_len, error_buf,
                                sizeof(error_buf));
@@ -218,8 +185,8 @@ static void dino_thread_entry(void *parameter)
                 uint16_t rgb565 = (r5 << 11) | (g6 << 5) | b5;
 
                 // Split the 16-bit value into two 8-bit values
-                lcd->lcd_info.framebuffer[2 * (h * 480 + w)] = rgb565 & 0xFF;
-                lcd->lcd_info.framebuffer[2 * (h * 480 + w) + 1] = (rgb565 >> 8) & 0xFF;;}
+                lcd->lcd_info.framebuffer[2 * ((h+195) * 480 + w)] = rgb565 & 0xFF;
+                lcd->lcd_info.framebuffer[2 * ((h+195) * 480 + w) + 1] = (rgb565 >> 8) & 0xFF;;}
         }
 
         rt_kprintf("frame %ld\n", i++);
@@ -275,15 +242,6 @@ static void dino_c_thread_entry(void *parameter)
         return;
     }
 
-    // natives registration must be done before loading WASM modules
-//    if (!wasm_runtime_register_natives("Dino",
-//                                     native_symbols_dino,
-//                                     sizeof(native_symbols_dino) / sizeof(NativeSymbol)))
-//    {
-//        printf("> Error linking functions!\n");
-//        return;
-//    }
-
     // Compile.
     printf("Compiling module...\n");
     wasm_byte_vec_t binary;
@@ -310,6 +268,7 @@ static void dino_c_thread_entry(void *parameter)
     wasm_extern_vec_t exports;
     wasm_instance_exports(instance, &exports);
 
+    // Get the memory
     wasm_memory_t* memory = get_export_memory(&exports, 0);
     wasm_func_t* run_func = get_export_func(&exports, 1);
     printf("Memory size: %d\n", wasm_memory_data_size(memory));
@@ -330,8 +289,6 @@ static void dino_c_thread_entry(void *parameter)
         }
 
         // Draw the framebuffer
-//        dino_memcpy(lcd->lcd_info.framebuffer, wasm_memory_data(memory)[0x5000], lcd->lcd_info.framebuffer[wasm_memory_data_size(memory) / 2]);
-
         for (int h = 0; h < 75; h++)
         {
             for (int w = 0; w < 300; w++)
@@ -349,8 +306,8 @@ static void dino_c_thread_entry(void *parameter)
                 uint16_t rgb565 = (r5 << 11) | (g6 << 5) | b5;
 
                 // Split the 16-bit value into two 8-bit values
-                lcd->lcd_info.framebuffer[2 * (h * 480 + w)] = rgb565 & 0xFF;
-                lcd->lcd_info.framebuffer[2 * (h * 480 + w) + 1] = (rgb565 >> 8) & 0xFF;;}
+                lcd->lcd_info.framebuffer[2 * ((h+195) * 480 + w)] = rgb565 & 0xFF;
+                lcd->lcd_info.framebuffer[2 * ((h+195) * 480 + w) + 1] = (rgb565 >> 8) & 0xFF;;}
         }
 
         printf("Frame %ld\n", i++);
