@@ -2,6 +2,8 @@
 
 This demo uses the (RT-Thread RA6M3 HMI Board).
 
+![](rt-thread.gif)
+
 You may also use pre-compiled firmware in this folder: rtthread.hex, rtthread.elf
 
 ```
