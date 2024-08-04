@@ -1,8 +1,10 @@
 ## WASM (RT-Thread RTOS)
 
-This demo uses the (RT-Thread RA6M3 HMI Board).
+This demo uses the [RT-Thread RA6M3 HMI Board](https://blog.lvgl.io/2023-06-14/ra6m3-hmi-board-review).
 
-You may also use pre-compiled firmware in this folder: rtthread.hex, rtthread.elf
+![](rt-thread.gif)
+
+You may also use pre-compiled firmware in this folder: [rtthread.hex](rtthread.hex), [rtthread.elf](rtthread.elf)
 
 ```
 $ git clone https://github.com/wuhanstudio/wasm-embedded
