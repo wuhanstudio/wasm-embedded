@@ -167,6 +167,10 @@ static void dino_thread_entry(void *parameter)
             goto fail;
         }
 
+        // Handle inputs here
+        mem_start_addr[0] |= 0x1;       // Jump flag
+        // mem_start_addr[0] |= 0x2;       // Duck flag
+
         // Draw the framebuffer
         for (int h = 0; h < 75; h++)
         {
@@ -287,6 +291,10 @@ static void dino_c_thread_entry(void *parameter)
             wasm_trap_delete(trap);
             break;
         }
+
+        // Handle inputs here
+        wasm_memory_data(memory)[0] |= 0x1;       // Jump flag
+        // wasm_memory_data(memory)[0] |= 0x2;       // Duck flag
 
         // Draw the framebuffer
         for (int h = 0; h < 75; h++)
